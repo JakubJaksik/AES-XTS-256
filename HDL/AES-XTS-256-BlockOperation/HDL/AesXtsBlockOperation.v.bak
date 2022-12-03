@@ -1,0 +1,148 @@
+module AesXtsBlockOperation (
+input	wire			inClk,
+input	wire			inAesMode,
+input	wire			inKeyWr,
+input	wire [511:0]	inKeyData,
+input	wire			inDataWr,
+input	wire [127:0]	inDataData,
+input	wire			inTweakValueWr,
+input	wire [127:0]	inTweakValueData,
+input	wire			inBlockNrWr,
+input	wire [127:0]	inBlockNrData,
+output	wire [127:0]	outData,
+output	wire			outKeysReady,
+output	wire			outBusy
+);
+
+wire			wireAesBlockKeySchoutBusy;
+wire			wireAesControloutIntKeySchDataWr;
+wire			wireAesControloutIntKeyRegRd;
+wire			wireAesControloutIntKeyRegAddr;
+wire 			wireAesControloutIntKeyMem1AWr;
+wire 			wireAesControloutIntKeyMem1BRd;
+wire 			wireAesControloutIntKeyMem2AWr;
+wire 			wireAesControloutIntKeyMem2BRd;
+wire			wireAesControloutIntAesEncTweakValueWr;
+wire			wireAesControloutIntAesEncDecDataWr;
+wire			wireAesControloutIntDataOutRegWr;
+wire			wireAesControloutIntTValueRegWr;
+wire 			wireAesEncoutBusy;
+wire 			wireAesEncDecoutBusy;
+
+wire [7:0]		wireAesControloutIntKeyMem1AAddr;
+wire [7:0]		wireAesControloutIntKeyMem1BAddr;
+wire [7:0]		wireAesControloutIntKeyMem2AAddr;
+wire [7:0]		wireAesControloutIntKeyMem2BAddr;
+wire [127:0]	wireAesBlockKeySchoutData;
+wire [255:0]	wireAesBlockKeyRegoutData;
+wire [255:0]	wireAesBlockKeyMem1outData;
+wire [255:0]	wireAesBlockKeyMem2outData;
+wire [127:0]	wireAesEncoutData;
+wire [127:0]	wireAesEncDecoutData;
+
+wire [127:0]	wireAesBlockXor1FunoutData;
+wire [127:0]	wireAesBlockXor2FunoutData;
+wire [127:0]	wireAesBlockMultAlphaFunoutData;
+wire [127:0]	wireAesTValueRegoutData;
+
+//TODO:
+// - z pamięci powinno być odczytywane po 256 bitów a zapisywane po 128
+
+//TODO:
+AesBlockControl AesBlockControl(
+			.inClk(inClk),
+			.inKeySchBusy(wireAesBlockKeySchoutBusy),
+			.inExtKeyWr(inKeyData),
+			.inAesEncBusy(wireAesEncoutBusy),
+			.inAesEncDecBusy(wireAesEncDecoutBusy),
+			.inExtDataWr(inDataWr),
+			.outIntKeySchDataWr(wireAesControloutIntKeySchDataWr),
+			.outIntKeyRegRd(wireAesControloutIntKeyRegRd),
+			.outIntKeyRegAddr(wireAesControloutIntKeyRegAddr),
+			.outIntKeyMem1AWr(wireAesControloutIntKeyMem1AWr),
+			.outIntKeyMem1AAddr(wireAesControloutIntKeyMem1AAddr),
+			.outIntKeyMem1BRd(wireAesControloutIntKeyMem1BRd),
+			.outIntKeyMem1BAddr(wireAesControloutIntKeyMem1BAddr),
+			.outIntKeyMem2AWr(wireAesControloutIntKeyMem2AWr),
+			.outIntKeyMem2AAddr(wireAesControloutIntKeyMem2AAddr),
+			.outIntKeyMem2BRd(wireAesControloutIntKeyMem2BRd),
+			.outIntKeyMem2BAddr(wireAesControloutIntKeyMem2BAddr),
+			.outIntAesEncDataWr(wireAesControloutIntAesEncTweakValueWr),
+			.outIntAesEncDecDataWr(wireAesControloutIntAesEncDecDataWr),
+			.outIntDataOutRegWr(wireAesControloutIntDataOutRegWr));
+			
+AesBlockKeySch AesBlockKeySch(
+			.inClk(inClk),
+			.inDataWr(wireAesControloutIntKeySchDataWr),
+			.inDataData(wireAesBlockKeyRegoutData),
+			.outData(wireAesBlockKeySchoutData),
+			.outBusy(wireAesBlockKeySchoutBusy));
+			
+AesBlockKeyReg AesBlockKeyReg(
+			.inClk(inClk),
+			.inDataWr(inKeyWr),
+			.inDataData(inKeyData),
+			.inRd(wireAesControloutIntKeyRegRd),
+			.inAddr(wireAesControloutIntKeyRegAddr),
+			.outData(wireAesBlockKeyRegoutData));
+
+AesBlockKeyMem AesBlockKeyMem1(
+			.inClk(inClk),
+			.inAWr(wireAesControloutIntKeyMem1AWr),
+			.inAAddr(wireAesControloutIntKeyMem1AAddr),
+			.inAData(wireAesBlockKeySchoutData),
+			.inBRd(wireAesControloutIntKeyMem1BRd),
+			.inBAddr(wireAesControloutIntKeyMem1BAddr),
+			.outBData(wireAesBlockKeyMem1outData));
+
+AesBlockKeyMem AesBlockKeyMem2(
+			.inClk(inClk),
+			.inAWr(wireAesControloutIntKeyMem2AWr),
+			.inAAddr(wireAesControloutIntKeyMem2AAddr),
+			.inAData(wireAesBlockKeySchoutData),
+			.inBRd(wireAesControloutIntKeyMem2BRd),
+			.inBAddr(wireAesControloutIntKeyMem2BAddr),
+			.outBData(wireAesBlockKeyMem2outData));
+
+AesBlockEnc AesBlockEnc(
+			.inClk(inClk),
+			.inAesMode(inAesMode),
+			.inKeyData(wireAesBlockKeyMem1outData),
+			.inDataWr(wireAesControloutIntAesEncTweakValueWr),
+			.inDataData(inTweakValueData),
+			.outData(wireAesEncoutData),
+			.outBusy(wireAesEncoutBusy));
+		
+AesBlockEncDec AesBlockEncDec(
+			.inClk(inClk),
+			.inKeyData(wireAesBlockKeyMem2outData),
+			.inDataWr(wireAesControloutIntAesEncDecDataWr),
+			.inDataData(wireAesBlockXor1FunoutData),
+			.outData(wireAesEncDecoutData),
+			.outBusy(wireAesEncDecoutBusy));
+			
+AesBlockOutReg AesBlockOutReg(
+			.inClk(inClk),
+			.inDataWr(wireAesControloutIntDataOutRegWr),
+			.inDataData(wireAesBlockXor2FunoutData),
+			.outData(outData));
+			
+AesBlockXorFun AesBlockXor1(
+			.inTValue(wireAesTValueRegoutData),
+			.inData(inDataData),
+			.outData(wireAesBlockXor1FunoutData));
+			
+AesBlockXorFun AesBlockXor2(
+			.inTValue(wireAesTValueRegoutData),
+			.inData(wireAesEncDecoutData),
+			.outData(wireAesBlockXor2FunoutData));
+			
+AesBlockMultAlphaFun AesBlockMultAlphaFun(
+			.inBlockNrData(inBlockNrData),
+			.inData(wireAesEncoutData),
+			.outData(wireAesBlockMultAlphaFunoutData));
+			
+AesBlockTValueReg AesBlockTValueReg(
+			.inTValueWr(wireAesControloutIntTValueRegWr),
+			.inTValueData(wireAesBlockMultAlphaFunoutData),
+			.outTValue(wireAesTValueRegoutData));

@@ -1,0 +1,16 @@
+module AesDecRoundFullFun (
+	input	wire	[127:0]	inData,	
+    input	wire	[127:0]	inKey,	
+	output	wire	[127:0]	outData 
+);    
+	
+wire [127:0] temp0;
+wire [127:0] temp1;
+wire [127:0] temp2;
+	
+AesAddRoundKeyFun 	aesAddRoundKeyFun 	(.inData(inData), .inKey(inKey), .outData(temp0));
+AesInvShiftRowsFun 	aesInvShiftRowsFun	(.inData(temp0), .outData(temp1));
+AesInvSubBytesFun 	aesInvSubBytesFun	(.inData(temp1), .outData(temp2));
+AesInvMixColumnsFun	aesInvMixColumnsFun	(.inData(temp2), .outData(outData));
+
+endmodule 

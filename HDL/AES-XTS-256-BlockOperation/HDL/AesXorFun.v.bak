@@ -1,0 +1,9 @@
+module AesBlockXorFun (
+input	wire [127:0]	inTValue,
+input	wire [127:0]	inData,
+output	wire [127:0]	outData
+);
+
+assign outData = inTValue ^ inData;
+
+endmodule

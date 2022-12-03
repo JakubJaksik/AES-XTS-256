@@ -1,0 +1,21 @@
+module AesBlockTValueReg (
+input	wire			inClk,
+input	wire [127:0]	inTValueWr,
+input	wire [127:0]	inTValueData,
+output	wire [127:0]	outTValue
+);
+
+reg [127:0] regTValue = 128'b0;
+
+always @ (posedge(inClk))
+begin
+	if (inTValueWr == 1'b1) begin
+		regTValue <= inTValueData;
+	end
+end
+
+assign outTValue = regTValue;
+
+endmodule
+                
+                

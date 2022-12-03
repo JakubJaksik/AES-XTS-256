@@ -1,0 +1,19 @@
+module AesBlockOutReg (
+input	wire			inClk,
+input	wire [127:0]	inDataWr,
+input	wire [127:0]	inDataData,
+output	wire [127:0]	outData
+);
+
+reg [127:0] regData = 128'b0;
+
+always @ (posedge(inClk))
+begin
+	if (inDataWr == 1'b1) begin
+		regData <= inDataData;
+	end
+end
+
+assign outData = regData;
+
+endmodule

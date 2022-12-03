@@ -1,0 +1,9 @@
+module AesBlockMultAlphaFun (
+input	wire [127:0]	inBlockNrData,
+input	wire [127:0]    inData,
+input	wire [127:0]    outData
+);
+
+//TODO
+
+endmodule
